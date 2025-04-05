@@ -4,12 +4,14 @@ import { markdown } from "@codemirror/lang-markdown";
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { socket } from "../sock";
+import createPatch from "textdiff-create";
+import applyPatch from "textdiff-patch";
 
 export function Page() {
 	const [page, setPage] = useState("");
 	useEffect(() => {
 		function pedit(data) {
-			setPage(data);
+			setPage((page) => applyPatch(page, data));
 		}
 		socket.on("pageEdit", pedit);
 		return () => socket.offAny(pedit);
@@ -21,8 +23,10 @@ export function Page() {
 			extensions: [markdown()],
 			value: page,
 			onChange: (a) => {
-				socket.emit("pageEdit", a);
+				socket.emit("pageEdit", createPatch(page, a));
+				setPage(a);
 			},
+			key: "page",
 		}),
 		h(Markdown, null, page),
 	);
