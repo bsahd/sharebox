@@ -18,4 +18,4 @@ export function App() {
 	);
 }
 
-render(h(App,null), document.getElementById("app"));
+render(h(App, null), document.getElementById("app"));

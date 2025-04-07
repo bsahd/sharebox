@@ -1,19 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 
 /**
- * @param {string} text
- * @param {string[]} arr
- * @returns {boolean}
- */
-function replaceOrInsert(text, arr) {
-	// 編集後のテキスト内にすでにそのテキストが含まれているかを判定
-	// console.log("roi", text, arr, arr.indexOf(text), arr.indexOf(text) !== -1);
-	return arr.indexOf(text) !== -1;
-}
-
-/**
- * @param {{id:string,text:string}[]} lines - 元の行
- * @param {string[]} editedText - 編集後の行
+ * @param {{id:string,text:string}[]} lines
+ * @param {string[]} editedText
  */
 export function createDiff(lines, editedText) {
 	/** @type {{type:"insert"|"replace"|"delete",position:string,text:string,id:string}[]} */
@@ -21,45 +10,35 @@ export function createDiff(lines, editedText) {
 	let index = 0;
 	let editedIndex = 0;
 
-	// 元の行と編集後の行を比較して変更を追跡
 	while (index < lines.length || editedIndex < editedText.length) {
 		const line = lines[index];
 		const after = editedText[editedIndex];
-		console.log(index, editedIndex, line?.text, after);
 
-		// 行が一致した場合（変更なし）
 		if (line?.text === after) {
 			index++;
 			editedIndex++;
-		}
-		// 編集後の行に新しい行が挿入された場合
-		else if (!line) {
+		} else if (!line) {
 			changes.push({
 				type: "insert",
-				position: "bottom", // 最後に挿入
+				position: "bottom",
 				text: after,
 				id: uuidv4(),
 			});
 			editedIndex++;
-		}
-		// 途中に挿入された場合
-		else if (replaceOrInsert(line.text, editedText.slice(editedIndex))) {
+		} else if (editedText.slice(editedIndex).includes(line.text)) {
 			changes.push({
 				type: "insert",
 				text: after,
-				position: line.id, // 現在の行IDを位置として使う
+				position: line.id,
 				id: uuidv4(),
 			});
 			editedIndex++;
-		}
-		// 行が変更された場合（元の行と編集後の行が異なる）
-		else if (
-			replaceOrInsert(
-				after,
-				lines.slice(index).map((a) => a.text),
-			)
+		} else if (
+			lines
+				.slice(index)
+				.map((a) => a.text)
+				.includes(after)
 		) {
-			//lines[index + 1]?.text == after
 			console.log("del");
 			changes.push({
 				type: "delete",
@@ -79,12 +58,12 @@ export function createDiff(lines, editedText) {
 			editedIndex++;
 		}
 	}
-	console.log(changes)
+	console.log(changes);
 	return changes;
 }
 
 /**
- * @param {{id:string,text:string}[]} lines - 元の行
+ * @param {{id:string,text:string}[]} lines
  * @param {{type:"insert"|"replace"|"delete",position:string,text:string,id:string}[]} patch
  */
 
@@ -95,7 +74,6 @@ export function patchDiff(lines, patch) {
 	for (let index = 0; index < lines.length; index++) {
 		const element = lines[index];
 		const pat = patch[patchi];
-		console.log(index,patchi,element,pat)
 		if (pat?.position == element.id) {
 			if (pat.type == "insert") {
 				newLine.push({ text: pat.text, id: pat.id });
@@ -115,6 +93,5 @@ export function patchDiff(lines, patch) {
 			}
 		}
 	}
-	console.log(newLine)
 	return newLine;
 }
