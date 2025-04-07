@@ -1,20 +1,29 @@
-import { Server } from "socket.io";
-import * as fs from "fs";
+import * as fs from "fs/promises";
 import path from "path";
 import { createDiff, patchDiff } from "../src/components/diff.js";
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
-const io = new Server();
-io.listen(3000);
+const app = express();
+app.use(
+	express.static(
+		path.join(import.meta.dirname, "..", "dist"),
+	),
+);
+const httpServer = createServer(app);
+const io = new Server(httpServer, {});
+
 let page = JSON.parse(
-	fs.readFileSync(path.join(import.meta.dirname, "page")).toString(),
+	(await fs.readFile(path.join(import.meta.dirname, "page"))).toString(),
 );
 
 io.on("connect", (sock) => {
 	console.log("new connect");
 	sock.emit("pageReplace", page);
-	sock.on("pageEdit", (data) => {
+	sock.on("pageEdit", async (data) => {
 		page = patchDiff(page, data);
-		fs.writeFileSync(
+		await fs.writeFile(
 			path.join(import.meta.dirname, "page"),
 			JSON.stringify(page),
 		);
@@ -22,4 +31,14 @@ io.on("connect", (sock) => {
 	});
 });
 
-console.log("websocket on 3000");
+app.get("*a", async (req, res) => {
+	res.type("html")
+	res.send(
+		await fs.readFile(
+			path.join(import.meta.dirname, "..", "dist", "index.html"),
+		),
+	);
+});
+
+httpServer.listen(3000);
+console.log("http://localhost:3000/");

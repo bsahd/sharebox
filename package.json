@@ -3,13 +3,14 @@
 	"type": "module",
 	"scripts": {
 		"dev": "concurrently \"vite --host 0.0.0.0\" \"node --watch backend/index.js\"",
-		"build": "vite build"
+		"build": "vite build",
+		"start": "node backend/index.js"
 	},
 	"dependencies": {
 		"@codemirror/lang-markdown": "^6.3.2",
 		"@uiw/react-codemirror": "^4.23.10",
 		"concurrently": "^9.1.2",
-		"fastify": "^5.2.2",
+		"express": "^5.1.0",
 		"markdown-to-jsx": "^7.7.4",
 		"preact": "^10.25.3",
 		"preact-iso": "^2.9.1",
